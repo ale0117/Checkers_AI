@@ -1,12 +1,13 @@
 from random import randint
 from BoardClasses import Move
 from BoardClasses import Board
-import Checker
+from collections import deque 
 #The following part should be completed by students.
 #Students can modify anything except the class name and existing functions and variables.
 class StudentAI():
 
     def __init__(self,col,row,p):
+
         self.col = col
         self.row = row
         self.p = p
@@ -86,12 +87,26 @@ class StudentAI():
                 if piece.get_color() == self.color_map[self.color]:
                     if piece.is_king:
                         ai_score += 2000
-                        # encourage king to take space in mid
-                        ai_score += ((self.row - 1) / 2 * 100) - (abs((self.row - 1)/ 2 - r) * 100)
-                        ai_score += ((self.col - 1) / 2 * 50) - (abs((self.col -1)/ 2 - c) * 50)
+                        #ai_score += ((self.row - 1) / 2 * 100) - (abs((self.row - 1)/ 2 - r) * 100)
+                        #ai_score += ((self.col - 1) / 2 * 50) - (abs((self.col -1)/ 2 - c) * 50)
+                        #encourage king pieces to go towards enemy pieces
+                        if turn == self.opponent[self.color]:
+                            closest_enemy_piece = None
+                            queue = deque([(r-1, c-1, 1), (r+1, c-1, 1), (r-1, c+1, 1), (r+1, c+1, 1)])
+                            checked = {(r, c), (r-1, c-1), (r+1, c-1), (r-1, c+1), (r+1, c+1)}
+                            while closest_enemy_piece == None and queue:
+                                coords = queue.popleft()
+                                if self.board.is_in_board(coords[0], coords[1]):
+                                    if self.board.board[coords[0]][coords[1]].get_color() == self.color_map[self.opponent[self.color]]:
+                                        closest_enemy_piece = coords
+                                    for m in [(-1, -1), (1, -1), (-1, 1), (1, 1)]:
+                                        if (coords[0]+m[0], coords[1]+m[1]) not in checked:
+                                            queue.append((coords[0]+m[0], coords[1]+m[1], coords[2]+1))
+                                            checked.add((coords[0]+m[0], coords[1]+m[1]))
+                            if closest_enemy_piece:
+                                ai_score += max(self.row-1, self.col-1) * 100 - closest_enemy_piece[2] * 100
                     else:
                         ai_score += 1000
-                        # encourage normal pieces to move towards other end to become king
                         if self.color != 1:
                             ai_score += (self.row - r) / self.row * 1000
                         else:
@@ -123,12 +138,26 @@ class StudentAI():
                 elif piece.get_color() == self.color_map[self.opponent[self.color]]:
                     if piece.is_king:
                         opponent_score += 2000
-                        # encourage king to take space in mid
-                        opponent_score += ((self.row - 1) / 2 * 100) - (abs((self.row - 1)/ 2 - r) * 100)
-                        opponent_score += ((self.col - 1) / 2 * 50) - (abs((self.col -1)/ 2 - c) * 50)
+                        #opponent_score += ((self.row - 1) / 2 * 100) - (abs((self.row - 1)/ 2 - r) * 100)
+                        #opponent_score += ((self.col - 1) / 2 * 50) - (abs((self.col -1)/ 2 - c) * 50)
+                        #encourage king pieces to go towards enemy pieces
+                        if turn == self.color:
+                            closest_enemy_piece = None
+                            queue = deque([(r-1, c-1, 1), (r+1, c-1, 1), (r-1, c+1, 1), (r+1, c+1, 1)])
+                            checked = {(r, c), (r-1, c-1), (r+1, c-1), (r-1, c+1), (r+1, c+1)}
+                            while closest_enemy_piece == None and queue:
+                                coords = queue.popleft()
+                                if self.board.is_in_board(coords[0], coords[1]):
+                                    if self.board.board[coords[0]][coords[1]].get_color() == self.color_map[self.color]:
+                                        closest_enemy_piece = coords
+                                    for m in [(-1, -1), (1, -1), (-1, 1), (1, 1)]:
+                                        if (coords[0]+m[0], coords[1]+m[1]) not in checked:
+                                            queue.append((coords[0]+m[0], coords[1]+m[1], coords[2]+1))
+                                            checked.add((coords[0]+m[0], coords[1]+m[1]))
+                            if closest_enemy_piece:
+                                opponent_score += max(self.row-1, self.col-1) * 100 - closest_enemy_piece[2] * 100
                     else:
                         opponent_score += 1000
-                        # encourage normal pieces to move towards other end to become king
                         if self.opponent[self.color] != 1:
                             opponent_score += (self.row - r) / self.row * 1000
                         else:
